@@ -1,3 +1,5 @@
+import java.util.Comparator;
+
 public class Channel {
     private String name;
     private float channelROI, lowerBound, upperBound;
@@ -30,5 +32,18 @@ public class Channel {
     public float getUpperBound() {
         return upperBound;
     }
+
+    public static Comparator<Channel> sortByROI = new Comparator<Channel>() {
+        @Override
+        public int compare(Channel o1, Channel o2) {
+            if (o1.channelROI > o2.channelROI) {
+                return 1;
+            }
+            if (o1.channelROI < o2.channelROI) {
+                return -1;
+            }
+            return 0;
+        }
+    };
 
 }

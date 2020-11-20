@@ -1,6 +1,6 @@
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class Chromosome {
     private ArrayList<Float> genes = new ArrayList<>();
@@ -10,35 +10,74 @@ public class Chromosome {
     }
 
     public void initialize() {
-        float newUB = MBA.marketingBudget;
-        for (int i1 = 0; i1 < MBA.nChannels; i1++) {
-            float temp = MBA.channels.get(i1).getLowerBound();
-            if(temp != -1)
-                newUB -= temp;
-        }
+        float totalInvestment = 0;
         for (int i = 0; i < MBA.nChannels; i++) {
             float lb = MBA.channels.get(i).getLowerBound();
             float ub = MBA.channels.get(i).getUpperBound();
-            float randd;
-            if(lb != -1 && ub != -1)
-                randd = lb + (new Random().nextFloat() * (ub - lb));
-            else if(lb == -1)
-                randd = new Random().nextFloat() * ub;
-            else {
-                ub = newUB + lb;
-                randd = lb + (new Random().nextFloat() * (ub -lb));
-            }
-            genes.add(randd);
+
+            if(lb == -1)
+                lb = 0;
+            if(ub == -1)
+                ub = MBA.commonUB + lb;
+            if((totalInvestment + ub) > MBA.marketingBudget)
+                ub -= ((totalInvestment + ub) - MBA.marketingBudget);
+
+            float randValue;
+            randValue = lb + (new Random().nextFloat() * (ub - lb));
+
+            totalInvestment += randValue;
+            genes.add(randValue);
         }
-        //handleInfeasiblity();
-        //fitnessEvaluation();
+        fitnessEvaluation();
+    }
+
+    public boolean isFeasible(){
+        return (genes.stream().mapToDouble(Float::doubleValue).sum() <= MBA.marketingBudget);
     }
 
     public void handleInfeasiblity(){
-        for (int i = 0; i < genes.size(); i++) {
-
+        ArrayList<Channel> sortedChannels = new ArrayList<>(MBA.channels);
+        sortedChannels.sort(Channel.sortByROI);
+        double extraInvestment = genes.stream().mapToDouble(Float::doubleValue).sum() - MBA.marketingBudget;
+        while (extraInvestment > 0){
+            Channel channel = sortedChannels.remove(0);
+            int index = MBA.channels.indexOf(channel);
+            float diff = genes.get(index) - channel.getLowerBound();
+            if(diff <= extraInvestment){
+                genes.set(index, channel.getLowerBound());
+                extraInvestment -= diff;
+            }
+            else {
+                float newInv = (float) (genes.get(index) - extraInvestment);
+                genes.set(index, newInv);
+                extraInvestment = 0;
+            }
         }
     }
 
+    public void fitnessEvaluation(){
+        for (int i = 0; i < genes.size(); i++)
+            fitness += genes.get(i) * (MBA.channels.get(i).getChannelROI()/100);
+    }
 
+    public ArrayList<Float> getGenes() {
+        return genes;
+    }
+
+    public float getFitness() {
+        return fitness;
+    }
+
+    public static Comparator<Chromosome> sortByFitness = new Comparator<Chromosome>() {
+        @Override
+        public int compare(Chromosome o1, Chromosome o2) {
+            if (o1.fitness > o2.fitness) {
+                return -1;
+            }
+            if (o1.fitness < o2.fitness) {
+                return 1;
+            }
+            return 0;
+        }
+    };
 }
