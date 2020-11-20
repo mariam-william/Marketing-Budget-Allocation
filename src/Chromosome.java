@@ -20,13 +20,13 @@ public class Chromosome {
             float lb = MBA.channels.get(i).getLowerBound();
             float ub = MBA.channels.get(i).getUpperBound();
 
-            if(lb == -1)
+            if (lb == -1)
                 lb = 0;
-            if(ub == -1)
+            if (ub == -1)
                 ub = MBA.commonUB + lb;
-            if((totalInvestment + ub) > MBA.marketingBudget)
+            if ((totalInvestment + ub) > MBA.marketingBudget)
                 ub = MBA.marketingBudget - totalInvestment;
-            if(ub < lb){
+            if (ub < lb) {
                 i = 0;
                 continue;
             }
@@ -40,23 +40,22 @@ public class Chromosome {
         fitnessEvaluation();
     }
 
-    public boolean isFeasible(){
+    public boolean isFeasible() {
         return (genes.stream().mapToDouble(Float::doubleValue).sum() <= MBA.marketingBudget);
     }
 
-    public void handleInfeasiblity(){
+    public void handleInfeasiblity() {
         ArrayList<Channel> sortedChannels = new ArrayList<>(MBA.channels);
         sortedChannels.sort(Channel.sortByROI);
         double extraInvestment = genes.stream().mapToDouble(Float::doubleValue).sum() - MBA.marketingBudget;
-        while (extraInvestment > 0){
+        while (extraInvestment > 0) {
             Channel channel = sortedChannels.remove(0);
             int index = MBA.channels.indexOf(channel);
             float diff = genes.get(index) - channel.getLowerBound();
-            if(diff <= extraInvestment){
+            if (diff <= extraInvestment) {
                 genes.set(index, channel.getLowerBound());
                 extraInvestment -= diff;
-            }
-            else {
+            } else {
                 float newInv = (float) (genes.get(index) - extraInvestment);
                 genes.set(index, newInv);
                 extraInvestment = 0;
@@ -64,9 +63,9 @@ public class Chromosome {
         }
     }
 
-    public void fitnessEvaluation(){
+    public void fitnessEvaluation() {
         for (int i = 0; i < genes.size(); i++)
-            fitness += genes.get(i) * (MBA.channels.get(i).getChannelROI()/100);
+            fitness += genes.get(i) * (MBA.channels.get(i).getChannelROI() / 100);
     }
 
     public ArrayList<Float> getGenes() {

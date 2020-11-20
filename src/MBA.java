@@ -1,3 +1,6 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,57 +60,57 @@ public class MBA {
         System.out.println("\nPlease wait while running the GA...\n");
     }
 
-    public static boolean contain(Chromosome c){
+    public static boolean contain(Chromosome c) {
         for (Chromosome chromosome : generation) {
-            if(c.getGenes() == chromosome.getGenes())
+            if (c.getGenes() == chromosome.getGenes())
                 return true;
         }
         return false;
     }
 
     public static void initPopulation() {
-        for (int i = 0; i < populationSize ; i++) {
+        for (int i = 0; i < populationSize; i++) {
             Chromosome chromosome = new Chromosome();
             chromosome.initialize();
-            if(contain(chromosome))
+            if (contain(chromosome))
                 i--;
             else
                 generation.add(chromosome);
         }
     }
 
-    public static ArrayList<Integer> tournamentSelection(int k, int nParents){
-        ArrayList<Integer>chromosomeIndex = new ArrayList<>();
-        ArrayList<Chromosome>parents = new ArrayList<>();
-        for (int i = 0; i < nParents ; i++) {
-            ArrayList<Integer>fitIndices = new ArrayList<>();
-            for (int j = 0; j < k ; j++) {
-                int fitIndex = ThreadLocalRandom.current().nextInt(0,generation.size());
-                if(!(fitIndices.contains(fitIndex)) && !(chromosomeIndex.contains(fitIndex))&& !(parents.contains(generation.get(fitIndex)))) {
+    public static ArrayList<Integer> tournamentSelection(int k, int nParents) {
+        ArrayList<Integer> chromosomeIndex = new ArrayList<>();
+        ArrayList<Chromosome> parents = new ArrayList<>();
+        for (int i = 0; i < nParents; i++) {
+            ArrayList<Integer> fitIndices = new ArrayList<>();
+            for (int j = 0; j < k; j++) {
+                int fitIndex = ThreadLocalRandom.current().nextInt(0, generation.size());
+                if (!(fitIndices.contains(fitIndex)) && !(chromosomeIndex.contains(fitIndex)) && !(parents.contains(generation.get(fitIndex)))) {
                     fitIndices.add(fitIndex);
                 } else
                     j--;
             }
-            ArrayList<Float>values = new ArrayList<>();
-            for (int j = 0; j < fitIndices.size() ; j++)
+            ArrayList<Float> values = new ArrayList<>();
+            for (int j = 0; j < fitIndices.size(); j++)
                 values.add(generation.get(fitIndices.get(j)).getFitness());
             float max = Collections.max(values);
             chromosomeIndex.add(fitIndices.get(values.indexOf(max)));
-            parents.add(generation.get(chromosomeIndex.get(chromosomeIndex.size()-1)));
+            parents.add(generation.get(chromosomeIndex.get(chromosomeIndex.size() - 1)));
         }
         return chromosomeIndex;
     }
 
-    public void crossover(int parent1, int parent2){
+    public void crossover(int parent1, int parent2) {
         float Pc = (float) 0.9;
         double rc = Math.random();
-        if(rc <= Pc){
+        if (rc <= Pc) {
             int cp1, cp2;
             cp1 = ThreadLocalRandom.current().nextInt(1, generation.get(0).getGenes().size());
             do {
                 cp2 = ThreadLocalRandom.current().nextInt(1, generation.get(0).getGenes().size());
-            }while (cp1 == cp2);
-            if(cp2 < cp1){
+            } while (cp1 == cp2);
+            if (cp2 < cp1) {
                 int temp = cp1;
                 cp1 = cp2;
                 cp2 = temp;
@@ -122,14 +125,13 @@ public class MBA {
             genes2.addAll(generation.get(parent2).getGenes().subList(cp2, generation.get(0).getGenes().size()));
             offsprings.add(new Chromosome(genes1));
             offsprings.add(new Chromosome(genes2));
-        }
-        else{
+        } else {
             offsprings.add(generation.get(parent1));
             offsprings.add(generation.get(parent2));
         }
     }
 
-    public void elitistReplacementStrategy(){
+    public void elitistReplacementStrategy() {
         ArrayList<Chromosome> newGeneration = new ArrayList<>();
         newGeneration.addAll(offsprings);
         int difference = populationSize - offsprings.size();
@@ -138,7 +140,7 @@ public class MBA {
         generation = newGeneration;
     }
 
-    public void getFinalSolution(){
+    public void getFinalSolution() {
         generation.sort(Chromosome.sortByFitness);
         System.out.println("\nThe final marketing budget allocation is:\n");
         for (int i = 0; i < nChannels; i++) {
@@ -147,7 +149,17 @@ public class MBA {
         System.out.println("\nThe total profit is " + generation.get(0).getFitness() + "K");
     }
 
-    public static void runGA(){
+    public void writeToFile(int runNum) throws IOException {
+        BufferedWriter writer = null;
+        writer = new BufferedWriter(new FileWriter("results.txt"));
+        writer.write("Run no.: " + runNum + "\tPobulation Size = " + populationSize + "\n");
+        writer.append("Total profit = ");
+        writer.append(String.valueOf(generation.get(0).getFitness()));
+        writer.append('K');
+        writer.append('\n');
+    }
+
+    public static void runGA() {
         initPopulation();
         /*System.out.println();
         for (Chromosome chromosome : generation) {
