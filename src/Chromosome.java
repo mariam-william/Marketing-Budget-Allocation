@@ -9,6 +9,11 @@ public class Chromosome {
     public Chromosome() {
     }
 
+    public Chromosome(ArrayList<Float> genes) {
+        this.genes = genes;
+        fitnessEvaluation();
+    }
+
     public void initialize() {
         float totalInvestment = 0;
         for (int i = 0; i < MBA.nChannels; i++) {
@@ -20,7 +25,11 @@ public class Chromosome {
             if(ub == -1)
                 ub = MBA.commonUB + lb;
             if((totalInvestment + ub) > MBA.marketingBudget)
-                ub -= ((totalInvestment + ub) - MBA.marketingBudget);
+                ub = MBA.marketingBudget - totalInvestment;
+            if(ub < lb){
+                i = 0;
+                continue;
+            }
 
             float randValue;
             randValue = lb + (new Random().nextFloat() * (ub - lb));
