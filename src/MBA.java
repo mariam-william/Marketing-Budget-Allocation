@@ -1,6 +1,4 @@
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -9,7 +7,7 @@ import java.util.concurrent.ThreadLocalRandom;
  **/
 
 public class MBA {
-    public static int nChannels, populationSize = 100;
+    public static int nChannels, populationSize = 50;
     public static float marketingBudget;
     public static float commonUB;
     public static Chromosome bestSolution1, bestSolution2;
@@ -42,7 +40,7 @@ public class MBA {
             String lb = reader.next();
             String ub = reader.next();
             if (lb.equalsIgnoreCase("x"))
-                channels.get(i).setLowerBound(-1);
+                channels.get(i).setLowerBound(0);
             else {
                 channels.get(i).setLowerBound(Float.parseFloat(lb));
                 commonUB -= Float.parseFloat(lb);
@@ -202,30 +200,27 @@ public class MBA {
     }
 
     public static void getBestSolution(Chromosome bestSolution) {
-        System.out.println("\nThe final marketing budget allocation is:\n");
+        System.out.println("\nThe final marketing budget allocation is:");
         for (int i = 0; i < nChannels; i++)
             System.out.println(channels.get(i).getName() + " -> " + bestSolution.getGenes().get(i) + "K");
         System.out.println("\nThe total profit is " + bestSolution.getFitness() + "K");
     }
 
-    public static void writeToFile(int runNum) throws IOException {
+    public static void writeToFile(int runNum, File file) throws IOException {
         generation.sort(Chromosome.sortByFitness);
-        BufferedWriter writer = null;
-        writer = new BufferedWriter(new FileWriter("results.txt"));
+
+        FileOutputStream fos = new FileOutputStream(file, true);
 
         if(runNum == 0)
-            writer.write("Uniform Mutation:\n\n");
+            fos.write(("Uniform Mutation:\n").getBytes());
         else if(runNum == 20)
-            writer.write("Non-uniform Mutation:\n\n");
+            fos.write(("\nNon-uniform Mutation:\n").getBytes());
 
-        writer.append("Iteration ").append(String.valueOf(runNum + 1)).append(":");
-        writer.append("\nThe final marketing budget allocation is:\n");
+        fos.write(("\nIteration " + (runNum + 1) + ":").getBytes());
+        fos.write(("\nThe final marketing budget allocation is:\n").getBytes());
         for (int i = 0; i < nChannels; i++)
-            writer.append(channels.get(i).getName()).append(" -> ").append(String.valueOf(generation.get(0).getGenes().get(i))).append("K \n");
-        writer.append("Total profit = ");
-        writer.append(String.valueOf(generation.get(0).getFitness()));
-        writer.append('K');
-        writer.append('\n');
+            fos.write((channels.get(i).getName() + " -> " + generation.get(0).getGenes().get(i) + "K \n").getBytes());
+        fos.write(("Total profit = " + generation.get(0).getFitness() + "K \n").getBytes());
 
         if(runNum < 20){
             if(runNum == 0)
@@ -242,30 +237,32 @@ public class MBA {
     }
 
     public static void runGA() throws IOException {
+        File outFile = new File("Output.txt");
         for (int i = 0; i < 40; i++) {
             initPopulation();
-            for (int j = 0; j < 50; j++) {
+            for (int j = 0; j < 20; j++) {
                 offsprings.clear();
-                while (offsprings.size() != 90){
+                while (offsprings.size() != 40){
                     ArrayList<Integer> parents = tournamentSelection(10, 2);
                     crossover(parents.get(0), parents.get(1));
                     if(i < 20)
                         uniformMutation();
                     else
-                        non_uniformMutation(j, 50);
+                        non_uniformMutation(j, 20);
                 }
                 for (int k = 0; k < offsprings.size(); k++) {
-                    offsprings.get(k).handleInfeasiblity();
+                    if(!offsprings.get(k).isFeasible())
+                        offsprings.get(k).handleInfeasiblity();
                     offsprings.get(k).fitnessEvaluation();
                 }
                 elitistReplacementStrategy();
             }
-            writeToFile(i);
+            writeToFile(i, outFile);
         }
 
-        System.out.println("The best solution obtained from running the algorithm with uniform mutation:\n");
+        System.out.println("The best solution obtained from running the algorithm with uniform mutation:");
         getBestSolution(bestSolution1);
-        System.out.println("\nThe best solution obtained from running the algorithm with non-uniform mutation:\n");
+        System.out.println("\n\nThe best solution obtained from running the algorithm with non-uniform mutation:");
         getBestSolution(bestSolution2);
     }
 

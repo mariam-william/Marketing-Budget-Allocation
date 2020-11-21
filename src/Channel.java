@@ -33,17 +33,8 @@ public class Channel {
         return upperBound;
     }
 
-    public static Comparator<Channel> sortByROI = new Comparator<Channel>() {
-        @Override
-        public int compare(Channel o1, Channel o2) {
-            if (o1.channelROI > o2.channelROI) {
-                return 1;
-            }
-            if (o1.channelROI < o2.channelROI) {
-                return -1;
-            }
-            return 0;
-        }
+    public static Comparator<Channel> sortByROI = (o1, o2) -> {
+        return Float.compare(o1.channelROI, o2.channelROI);
     };
 
 }

@@ -20,21 +20,20 @@ public class Chromosome {
             float lb = MBA.channels.get(i).getLowerBound();
             float ub = MBA.channels.get(i).getUpperBound();
 
-            if (lb == -1)
-                lb = 0;
             if (ub == -1)
                 ub = MBA.commonUB + lb;
             if ((totalInvestment + ub) > MBA.marketingBudget)
                 ub = MBA.marketingBudget - totalInvestment;
             if (ub < lb) {
-                i = 0;
-                continue;
+                i = -1;
+                totalInvestment = 0;
+                genes.clear();
             }
-
-            float randValue = lb + (new Random().nextFloat() * (ub - lb));
-
-            totalInvestment += randValue;
-            genes.add(randValue);
+            else{
+                float randValue = lb + (new Random().nextFloat() * (ub - lb));
+                totalInvestment += randValue;
+                genes.add(randValue);
+            }
         }
         fitnessEvaluation();
     }
@@ -44,7 +43,8 @@ public class Chromosome {
     }
 
     public void handleInfeasiblity() {
-        ArrayList<Channel> sortedChannels = new ArrayList<>(MBA.channels);
+        ArrayList<Channel> sortedChannels = new ArrayList<>();
+        sortedChannels.addAll(MBA.channels);
         sortedChannels.sort(Channel.sortByROI);
         double extraInvestment = genes.stream().mapToDouble(Float::doubleValue).sum() - MBA.marketingBudget;
         while (extraInvestment > 0) {
@@ -63,8 +63,9 @@ public class Chromosome {
     }
 
     public void fitnessEvaluation() {
+        fitness = 0;
         for (int i = 0; i < genes.size(); i++)
-            fitness += genes.get(i) * (MBA.channels.get(i).getChannelROI() / 100);
+            fitness += (genes.get(i) * (MBA.channels.get(i).getChannelROI() / 100));
     }
 
     public ArrayList<Float> getGenes() {
@@ -75,16 +76,7 @@ public class Chromosome {
         return fitness;
     }
 
-    public static Comparator<Chromosome> sortByFitness = new Comparator<Chromosome>() {
-        @Override
-        public int compare(Chromosome o1, Chromosome o2) {
-            if (o1.fitness > o2.fitness) {
-                return -1;
-            }
-            if (o1.fitness < o2.fitness) {
-                return 1;
-            }
-            return 0;
-        }
+    public static Comparator<Chromosome> sortByFitness = (o1, o2) -> {
+        return Float.compare(o2.fitness, o1.fitness);
     };
 }
