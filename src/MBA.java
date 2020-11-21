@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
  **/
 
 public class MBA {
-    public static int nChannels, populationSize = 100;
+    public static int nChannels, populationSize = 10;
     public static float marketingBudget;
     public static float commonUB;
     public static Chromosome bestSolution1, bestSolution2;
@@ -244,15 +244,15 @@ public class MBA {
     public static void runGA() throws IOException {
         for (int i = 0; i < 40; i++) {
             initPopulation();
-            for (int j = 0; j < 50; j++) {
+            for (int j = 0; j < 5; j++) {
                 offsprings.clear();
-                while (offsprings.size() != 90){
-                    ArrayList<Integer> parents = tournamentSelection(10, 2);
+                while (offsprings.size() != 8){
+                    ArrayList<Integer> parents = tournamentSelection(4, 2);
                     crossover(parents.get(0), parents.get(1));
                     if(i < 20)
                         uniformMutation();
                     else
-                        non_uniformMutation(j, 50);
+                        non_uniformMutation(j, 5);
                 }
                 for (int k = 0; k < offsprings.size(); k++) {
                     offsprings.get(k).handleInfeasiblity();
