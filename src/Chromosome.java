@@ -28,9 +28,9 @@ public class Chromosome {
                 i = -1;
                 totalInvestment = 0;
                 genes.clear();
-            }
-            else{
+            } else {
                 float randValue = lb + (new Random().nextFloat() * (ub - lb));
+                randValue = (float) (Math.floor(randValue * 100) / 100);
                 totalInvestment += randValue;
                 genes.add(randValue);
             }
