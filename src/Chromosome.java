@@ -31,8 +31,7 @@ public class Chromosome {
                 continue;
             }
 
-            float randValue;
-            randValue = lb + (new Random().nextFloat() * (ub - lb));
+            float randValue = lb + (new Random().nextFloat() * (ub - lb));
 
             totalInvestment += randValue;
             genes.add(randValue);

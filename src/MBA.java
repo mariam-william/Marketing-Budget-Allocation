@@ -1,10 +1,7 @@
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -12,9 +9,10 @@ import java.util.concurrent.ThreadLocalRandom;
  **/
 
 public class MBA {
-    public static int nChannels, populationSize = 5;
+    public static int nChannels, populationSize = 100;
     public static float marketingBudget;
     public static float commonUB;
+    public static Chromosome bestSolution1, bestSolution2;
     public static ArrayList<Channel> channels = new ArrayList<>();
     public static ArrayList<Chromosome> generation = new ArrayList<>();
     public static ArrayList<Chromosome> offsprings = new ArrayList<>();
@@ -69,6 +67,7 @@ public class MBA {
     }
 
     public static void initPopulation() {
+        generation.clear();
         for (int i = 0; i < populationSize; i++) {
             Chromosome chromosome = new Chromosome();
             chromosome.initialize();
@@ -101,7 +100,7 @@ public class MBA {
         return chromosomeIndex;
     }
 
-    public void crossover(int parent1, int parent2) {
+    public static void crossover(int parent1, int parent2) {
         float Pc = (float) 0.9;
         double rc = Math.random();
         if (rc <= Pc) {
@@ -131,7 +130,69 @@ public class MBA {
         }
     }
 
-    public void elitistReplacementStrategy() {
+    public static void uniformMutation(){
+        float Pm = (float) 0.1;
+        for (int i = offsprings.size()-2; i < offsprings.size(); i++) {
+            for (int j = 0; j < offsprings.get(i).getGenes().size(); j++) {
+                double rm = Math.random();
+                if (rm <= Pm){
+                    float newValue = offsprings.get(i).getGenes().get(j);
+                    float deltaL = offsprings.get(i).getGenes().get(j) - channels.get(j).getLowerBound();
+                    float deltaU = channels.get(j).getUpperBound() - offsprings.get(i).getGenes().get(j);
+                    float delta;
+
+                    double r1 = Math.random();
+                    if(r1 <= 0.5)
+                        delta = deltaL;
+                    else
+                        delta = deltaU;
+
+                    float r2 = (new Random().nextFloat() * (delta));
+                    if(delta == deltaL)
+                        newValue -= r2;
+                    else
+                        newValue += r2;
+
+                    offsprings.get(i).getGenes().set(j, newValue);
+                }
+            }
+        }
+    }
+
+    public static void non_uniformMutation(int t, int nGenerations){
+        float Pm = 0.1f;
+        float b = 0.8f;
+        float gen = (t * 1.0f)/nGenerations;
+        for (int i = offsprings.size()-2; i < offsprings.size(); i++) {
+            for (int j = 0; j < offsprings.get(i).getGenes().size(); j++) {
+                double rm = Math.random();
+                if (rm <= Pm){
+                    float newValue = offsprings.get(i).getGenes().get(j);
+                    float deltaL = offsprings.get(i).getGenes().get(j) - channels.get(j).getLowerBound();
+                    float deltaU = channels.get(j).getUpperBound() - offsprings.get(i).getGenes().get(j);
+                    float y, delta_ty;
+
+                    double r1 = Math.random();
+                    if(r1 <= 0.5)
+                        y = deltaL;
+                    else
+                        y = deltaU;
+
+                    double r = Math.random();
+                    delta_ty = (float) (y * (1 - Math.pow(r, Math.pow((1 - gen), b))));
+
+                    if(y == deltaL)
+                        newValue -= delta_ty;
+                    else
+                        newValue += delta_ty;
+
+                    offsprings.get(i).getGenes().set(j, newValue);
+                }
+            }
+        }
+    }
+
+    public static void elitistReplacementStrategy() {
         ArrayList<Chromosome> newGeneration = new ArrayList<>();
         newGeneration.addAll(offsprings);
         int difference = populationSize - offsprings.size();
@@ -140,37 +201,75 @@ public class MBA {
         generation = newGeneration;
     }
 
-    public void getFinalSolution() {
-        generation.sort(Chromosome.sortByFitness);
+    public static void getBestSolution(Chromosome bestSolution) {
         System.out.println("\nThe final marketing budget allocation is:\n");
-        for (int i = 0; i < nChannels; i++) {
-            System.out.println(channels.get(i).getName() + " -> " + generation.get(0).getGenes().get(i) + "K");
-        }
-        System.out.println("\nThe total profit is " + generation.get(0).getFitness() + "K");
+        for (int i = 0; i < nChannels; i++)
+            System.out.println(channels.get(i).getName() + " -> " + bestSolution.getGenes().get(i) + "K");
+        System.out.println("\nThe total profit is " + bestSolution.getFitness() + "K");
     }
 
-    public void writeToFile(int runNum) throws IOException {
+    public static void writeToFile(int runNum) throws IOException {
+        generation.sort(Chromosome.sortByFitness);
         BufferedWriter writer = null;
         writer = new BufferedWriter(new FileWriter("results.txt"));
-        writer.write("Run no.: " + runNum + "\tPobulation Size = " + populationSize + "\n");
+
+        if(runNum == 0)
+            writer.write("Uniform Mutation:\n\n");
+        else if(runNum == 20)
+            writer.write("Non-uniform Mutation:\n\n");
+
+        writer.append("Iteration ").append(String.valueOf(runNum + 1)).append(":");
+        writer.append("\nThe final marketing budget allocation is:\n");
+        for (int i = 0; i < nChannels; i++)
+            writer.append(channels.get(i).getName()).append(" -> ").append(String.valueOf(generation.get(0).getGenes().get(i))).append("K \n");
         writer.append("Total profit = ");
         writer.append(String.valueOf(generation.get(0).getFitness()));
         writer.append('K');
         writer.append('\n');
-    }
 
-    public static void runGA() {
-        initPopulation();
-        /*System.out.println();
-        for (Chromosome chromosome : generation) {
-            System.out.println(Arrays.toString(chromosome.getGenes().toArray()));
-            System.out.println("Sum = " + chromosome.getGenes().stream().mapToDouble(Float::doubleValue).sum());
-            System.out.println("Fitness = " + chromosome.getFitness());
+        if(runNum < 20){
+            if(runNum == 0)
+                bestSolution1 = generation.get(0);
+            else if(generation.get(0).getFitness() > bestSolution1.getFitness())
+                bestSolution1 = generation.get(0);
         }
-        System.out.println();*/
+        else{
+            if(runNum == 20)
+                bestSolution2 = generation.get(0);
+            else if(generation.get(0).getFitness() > bestSolution2.getFitness())
+                bestSolution2 = generation.get(0);
+        }
     }
 
-    public static void main(String[] args) {
+    public static void runGA() throws IOException {
+        for (int i = 0; i < 40; i++) {
+            initPopulation();
+            for (int j = 0; j < 50; j++) {
+                offsprings.clear();
+                while (offsprings.size() != 90){
+                    ArrayList<Integer> parents = tournamentSelection(10, 2);
+                    crossover(parents.get(0), parents.get(1));
+                    if(i < 20)
+                        uniformMutation();
+                    else
+                        non_uniformMutation(j, 50);
+                }
+                for (int k = 0; k < offsprings.size(); k++) {
+                    offsprings.get(k).handleInfeasiblity();
+                    offsprings.get(k).fitnessEvaluation();
+                }
+                elitistReplacementStrategy();
+            }
+            writeToFile(i);
+        }
+
+        System.out.println("The best solution obtained from running the algorithm with uniform mutation:\n");
+        getBestSolution(bestSolution1);
+        System.out.println("\nThe best solution obtained from running the algorithm with non-uniform mutation:\n");
+        getBestSolution(bestSolution2);
+    }
+
+    public static void main(String[] args) throws IOException {
         getInput();
         runGA();
     }
