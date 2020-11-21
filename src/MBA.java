@@ -214,13 +214,14 @@ public class MBA {
         if(runNum == 0)
             fos.write(("Uniform Mutation:\n").getBytes());
         else if(runNum == 20)
-            fos.write(("\nNon-uniform Mutation:\n").getBytes());
+            fos.write(("\n\nNon-uniform Mutation:\n").getBytes());
 
-        fos.write(("\nIteration " + (runNum + 1) + ":").getBytes());
+        fos.write(("\nIteration " + ((runNum + 1)%21) + ":").getBytes());
         fos.write(("\nThe final marketing budget allocation is:\n").getBytes());
         for (int i = 0; i < nChannels; i++)
             fos.write((channels.get(i).getName() + " -> " + generation.get(0).getGenes().get(i) + "K \n").getBytes());
-        fos.write(("Total profit = " + generation.get(0).getFitness() + "K \n").getBytes());
+        fos.write(("\nTotal profit = " + generation.get(0).getFitness() + "K \n").getBytes());
+        fos.close();
 
         if(runNum < 20){
             if(runNum == 0)
